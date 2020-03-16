@@ -1,0 +1,48 @@
+{
+  "project_info": {
+    "project_number": "1015343082205",
+    "firebase_url": "https://driving-65c1e.firebaseio.com",
+    "project_id": "driving-65c1e",
+    "storage_bucket": "driving-65c1e.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1015343082205:android:b8fe850c634ff4ceb14934",
+        "android_client_info": {
+          "package_name": "com.xiaoben.driving"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "1015343082205-vgro280u73co2iq8m65o4krod4gmjpp5.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.xiaoben.driving",
+            "certificate_hash": "18ebc9026ab56732c5018bcc7ee5d14ebc6267c0"
+          }
+        },
+        {
+          "client_id": "1015343082205-pa5dg2n4tb4ldp1ta7qkkuhh3t9hkuf5.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyA5r7VCS4iZitnSw6Y85-wEFL89a5EM7gI"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "1015343082205-pa5dg2n4tb4ldp1ta7qkkuhh3t9hkuf5.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
