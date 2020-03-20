@@ -14,22 +14,22 @@ import java.util.List;
 
 public class ReportRecyclerViewAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
 
-    private List<Item> mItems;
-    private LayoutInflater mInflater;
-    private OnClickListener mClickListener;
+    private List<Item> items;
+    private LayoutInflater inflater;
+    private OnClickListener clickListener;
 
     public interface OnClickListener{
         public void setItem(String item);
     }
 
     public void setClickListener(ReportRecyclerViewAdapter.OnClickListener callback) {
-        mClickListener = callback;
+        clickListener = callback;
     }
 
 
     public ReportRecyclerViewAdapter(Context context, List<Item> items) {
-        this.mInflater = LayoutInflater.from(context);
-        this.mItems = items;
+        this.inflater = LayoutInflater.from(context);
+        this.items = items;
     }
 
     // /**
@@ -41,7 +41,7 @@ public class ReportRecyclerViewAdapter extends RecyclerView.Adapter<RecyclerView
     @NonNull
     @Override
     public RecyclerView.ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
-        View view = mInflater.inflate(R.layout.recyclerview_item, parent, false);
+        View view = inflater.inflate(R.layout.recyclerview_item, parent, false);
         RecyclerView.ViewHolder holder = new ViewHolder(view);
         return holder;
     }
@@ -56,14 +56,14 @@ public class ReportRecyclerViewAdapter extends RecyclerView.Adapter<RecyclerView
     @Override
     public void onBindViewHolder(@NonNull RecyclerView.ViewHolder holder, final int position) {
         ViewHolder viewHolder = (ViewHolder) holder;
-        viewHolder.mTextView.setText(mItems.get(position).getDrawable_label());
-        viewHolder.mImageView.setImageResource(mItems.get(position).getDrawable_id());
+        viewHolder.mTextView.setText(items.get(position).getDrawable_label());
+        viewHolder.mImageView.setImageResource(items.get(position).getDrawable_id());
 
         viewHolder.itemView.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                if (mClickListener != null) {
-                    mClickListener.setItem(mItems.get(position).getDrawable_label());
+                if (clickListener != null) {
+                    clickListener.setItem(items.get(position).getDrawable_label());
                 }
             }
         });
@@ -73,7 +73,7 @@ public class ReportRecyclerViewAdapter extends RecyclerView.Adapter<RecyclerView
     //total number of cells
     @Override
     public int getItemCount() {
-        return mItems.size();
+        return items.size();
     }
 
     /**
