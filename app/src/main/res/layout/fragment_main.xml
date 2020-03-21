@@ -12,13 +12,9 @@
         android:layout_height="match_parent">
 
         <RelativeLayout
+            android:id="@+id/relativeLayout"
             android:layout_width="match_parent"
             android:layout_height="match_parent">
-
-            <com.google.android.gms.maps.MapView
-                android:id="@+id/event_map_view"
-                android:layout_width="match_parent"
-                android:layout_height="match_parent" />
 
             <com.google.android.material.floatingactionbutton.FloatingActionButton
                 android:id="@+id/fab"
@@ -28,8 +24,19 @@
                 android:layout_alignParentBottom="true"
                 android:layout_centerHorizontal="true"
                 android:layout_margin="24dp"
-                android:src="@drawable/plus"
-                android:tint="#fff" />
+                android:src="@drawable/plus" />
+
+            <com.google.android.material.floatingactionbutton.FloatingActionButton
+                android:id="@+id/voice"
+                android:layout_width="80dp"
+                android:layout_height="80dp"
+                android:layout_above="@id/fab"
+                android:layout_alignParentEnd="true"
+                android:layout_marginBottom="6dp"
+                android:layout_marginRight="24dp"
+                android:src="@drawable/chat"
+                />
+
 
             <com.google.android.material.floatingactionbutton.FloatingActionButton
                 android:id="@+id/fab_focus"
@@ -41,6 +48,11 @@
                 android:layout_margin="24dp"
                 android:src="@drawable/focus"
                 android:tint="#fff" />
+
+            <com.google.android.gms.maps.MapView
+                android:id="@+id/event_map_view"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent" />
 
         </RelativeLayout>
 
@@ -92,7 +104,7 @@
                 android:layout_height="80dp"
                 android:layout_alignParentRight="true"
                 android:layout_marginRight="30dp"
-                android:src="@drawable/policeman"></ImageView>
+                tools:src="@drawable/policeman"></ImageView>
 
         <LinearLayout
             android:layout_width="wrap_content"
@@ -127,6 +139,7 @@
                 android:textSize="15sp"></TextView>
         </LinearLayout>
     </RelativeLayout>
+
     </androidx.coordinatorlayout.widget.CoordinatorLayout>
 
 

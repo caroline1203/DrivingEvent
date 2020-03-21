@@ -2,11 +2,13 @@ package com.xiaoben.driving;
 
 import android.Manifest;
 import android.app.Activity;
+import android.content.ActivityNotFoundException;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.net.Uri;
+import android.os.AsyncTask;
 import android.os.Bundle;
 
 import androidx.annotation.NonNull;
@@ -16,6 +18,7 @@ import androidx.core.content.ContextCompat;
 import androidx.fragment.app.Fragment;
 
 import android.provider.MediaStore;
+import android.speech.RecognizerIntent;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -52,8 +55,11 @@ import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Locale;
 
 import static android.app.Activity.RESULT_OK;
+import static com.xiaoben.driving.Config.listItems;
 
 
 /**
@@ -62,6 +68,7 @@ import static android.app.Activity.RESULT_OK;
 public class MainFragment extends Fragment implements OnMapReadyCallback, ReportDialog.DialogCallBack, GoogleMap.OnMarkerClickListener  {
 
     private static final int REQUEST_CAPTURE_IMAGE = 50;
+    private static final int REQ_CODE_SPEECH_INPUT = 51;
 //    private final String path = Environment.getExternalStorageDirectory() + "/temp.png";
     private File destination;
     private static final int REQUEST_EXTERNAL_STORAGE = 1;
@@ -72,23 +79,26 @@ public class MainFragment extends Fragment implements OnMapReadyCallback, Report
     private View view;
     private MapView mapView;
     private GoogleMap googleMap;
+
     private LocationTracker locationTracker;
     private FloatingActionButton fabReport;
     private FloatingActionButton fabFocus;
+    private FloatingActionButton speakNow;
+
     private ReportDialog dialog;
     private DatabaseReference database;
     private FirebaseStorage storage;
     private StorageReference storageRef;
     //event information part
     private BottomSheetBehavior bottomSheetBehavior;
-    private ImageView mEventImageLike;
-    private ImageView mEventImageComment;
+    private ImageView eventImageLike;
+    private ImageView eventImageComment;
     private ImageView eventImageType;
-    private TextView mEventTextLike;
-    private TextView mEventTextType;
-    private TextView mEventTextLocation;
+    private TextView eventTextLike;
+    private TextView eventTextType;
+    private TextView eventTextLocation;
     private TextView eventTextTime;
-    private TrafficEvent mEvent;
+    private TrafficEvent event;
 
 
 
@@ -142,10 +152,33 @@ public class MainFragment extends Fragment implements OnMapReadyCallback, Report
             }
         });
 
+        speakNow = view.findViewById(R.id.voice);
+        speakNow.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                askSpeechInput("Hi speak something");
+            }
+        });
+
         if(mapView != null){
             mapView.onCreate(null);
             mapView.onResume();// needed to get the map to display immediately
             mapView.getMapAsync(this);
+        }
+    }
+
+    private void askSpeechInput(String string) {
+        Intent intent = new Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH);
+        intent.putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL,
+                RecognizerIntent.LANGUAGE_MODEL_FREE_FORM);
+        intent.putExtra(RecognizerIntent.EXTRA_LANGUAGE, Locale.getDefault());
+        intent.putExtra(RecognizerIntent.EXTRA_SPEECH_INPUT_COMPLETE_SILENCE_LENGTH_MILLIS, 2000);
+        intent.putExtra(RecognizerIntent.EXTRA_PROMPT,
+                string);
+        try {
+            startActivityForResult(intent, REQ_CODE_SPEECH_INPUT);
+        } catch (ActivityNotFoundException a) {
+
         }
     }
 
@@ -173,9 +206,10 @@ public class MainFragment extends Fragment implements OnMapReadyCallback, Report
         mapView.onLowMemory();
     }
 
-    private void showDialog(String label, String prefillText){
+    private void showDialog(String label, String prefill_text){
         dialog = new ReportDialog(getContext());
         dialog.setDialogCallBack(this);
+        dialog.setVocieInfor(label, prefill_text);
         dialog.show();
     }
 
@@ -266,7 +300,6 @@ public class MainFragment extends Fragment implements OnMapReadyCallback, Report
 
     }
 
-
     @Override
     public void onSubmit(String editString, String event_type) {
         String key = uploadEvent(Config.username, editString, event_type);
@@ -314,6 +347,30 @@ public class MainFragment extends Fragment implements OnMapReadyCallback, Report
                 }
                 break;
             }
+            case REQ_CODE_SPEECH_INPUT: {
+                if (resultCode == RESULT_OK && null != data) {
+
+                    ArrayList<String> result = data
+                            .getStringArrayListExtra(RecognizerIntent.EXTRA_RESULTS);
+                    if (result.size() > 0) {
+                        final String sentence = result.get(0);
+                        boolean isMatch = false;
+                        for (int i = 0; i < listItems.size(); i++) {
+                            final String label = listItems.get(i).getDrawable_label();
+                            if (sentence.toLowerCase().contains(label.toLowerCase())) {
+                                showDialog(label, sentence);
+//                                Toast.makeText(getContext(), sentence, Toast.LENGTH_LONG).show();
+                                isMatch = true;
+                                break;
+                            }
+                        }
+                        if (!isMatch) {
+                            askSpeechInput("Try again");
+                        }
+                    }
+                }
+                break;
+            }
             default:
         }
     }
@@ -351,7 +408,6 @@ public class MainFragment extends Fragment implements OnMapReadyCallback, Report
         });
     }
 
-
     public static void verifyStoragePermissions(Activity activity) {
         // Check if we have write permission
         int permission = ActivityCompat.checkSelfPermission(activity, Manifest.permission.WRITE_EXTERNAL_STORAGE);
@@ -365,7 +421,6 @@ public class MainFragment extends Fragment implements OnMapReadyCallback, Report
             );
         }
     }
-
 
     //get center coordinate
     private void loadEventInVisibleMap() {
@@ -401,6 +456,7 @@ public class MainFragment extends Fragment implements OnMapReadyCallback, Report
                         // adding marker
                         Marker mker = googleMap.addMarker(marker);
                         mker.setTag(event);
+
                     }
                 }
             }
@@ -412,26 +468,42 @@ public class MainFragment extends Fragment implements OnMapReadyCallback, Report
         });
     }
 
-
     @Override
     public boolean onMarkerClick(Marker marker) {
-        mEvent = (TrafficEvent) marker.getTag();
-        if (mEvent == null) {
+        event = (TrafficEvent) marker.getTag();
+        if (event == null) {
             return false;
         }
-        String user = mEvent.getEvent_reporter_id();
-        String type = mEvent.getEvent_type();
-        long time = mEvent.getEvent_timestamp();
-        double latitude = mEvent.getEvent_latitude();
-        double longitutde = mEvent.getEvent_longitude();
-        int likeNumber = mEvent.getEvent_like_number();
+        String user = event.getEvent_reporter_id();
+        String type = event.getEvent_type();
+        long time = event.getEvent_timestamp();
+        double latitude = event.getEvent_latitude();
+        double longitutde = event.getEvent_longitude();
+        int likeNumber = event.getEvent_like_number();
 
-        String description = mEvent.getEvent_description();
+        String description = event.getEvent_description();
         marker.setTitle(description);
-        mEventTextLike.setText(String.valueOf(likeNumber));
-        mEventTextType.setText(type);
+        eventTextLike.setText(String.valueOf(likeNumber));
+        eventTextType.setText(type);
+        final String url = event.getImgUri();
 
-        eventImageType.setImageDrawable(ContextCompat.getDrawable(getContext(), Config.trafficMap.get(type)));
+        if (url != null) {
+            new AsyncTask<Void, Void, Bitmap>() {
+            @Override
+            protected Bitmap doInBackground(Void... voids) {
+                Bitmap bitmap = Utils.getBitmapFromURL(url);
+                return bitmap;
+            }
+
+            @Override
+            protected void onPostExecute(Bitmap bitmap) {
+                super.onPostExecute(bitmap);
+                eventImageType.setImageBitmap(bitmap);
+            }
+        }.execute();
+        }
+
+//        eventImageType.setImageDrawable(ContextCompat.getDrawable(getContext(), Config.trafficMap.get(type)));
 
         if (user == null) {
             user = "";
@@ -447,7 +519,7 @@ public class MainFragment extends Fragment implements OnMapReadyCallback, Report
         if (locationTracker != null) {
             distance = Utils.distanceBetweenTwoLocations(latitude, longitutde, locationTracker.getLatitude(), locationTracker.getLongitude());
         }
-        mEventTextLocation.setText(distance + " miles away");
+        eventTextLocation.setText(distance + " miles away");
 
         if (bottomSheetBehavior.getState() == BottomSheetBehavior.STATE_HIDDEN) {
             bottomSheetBehavior.setState(BottomSheetBehavior.STATE_EXPANDED);
@@ -456,7 +528,6 @@ public class MainFragment extends Fragment implements OnMapReadyCallback, Report
         }
         return true;
     }
-
 
     private void setupBottomBehavior() {
         //set up bottom up slide
@@ -469,17 +540,24 @@ public class MainFragment extends Fragment implements OnMapReadyCallback, Report
         //set expansion speed
         bottomSheetBehavior.setPeekHeight(1000);
 
-        mEventImageLike = (ImageView) view.findViewById(R.id.event_info_like_img);
-        mEventImageComment = (ImageView) view.findViewById(R.id.event_info_comment_img);
-        eventImageType = (ImageView) view.findViewById(R.id.event_info_type_img);
-        mEventTextLike = (TextView) view.findViewById(R.id.event_info_like_text);
-        mEventTextType = (TextView) view.findViewById(R.id.event_info_type_text);
-        mEventTextLocation = (TextView) view.findViewById(R.id.event_info_location_text);
-        eventTextTime = (TextView) view.findViewById(R.id.event_info_time_text);
+        eventImageLike = view.findViewById(R.id.event_info_like_img);
+        eventImageComment = view.findViewById(R.id.event_info_comment_img);
+        eventImageType =  view.findViewById(R.id.event_info_type_img);
+        eventTextLike =  view.findViewById(R.id.event_info_like_text);
+        eventTextType = view.findViewById(R.id.event_info_type_text);
+        eventTextLocation = view.findViewById(R.id.event_info_location_text);
+        eventTextTime =  view.findViewById(R.id.event_info_time_text);
+
+        eventImageLike.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                int number = Integer.parseInt(eventTextLike.getText().toString());
+                database.child("events").child(event.getId()).child("event_like_number").setValue(number + 1);
+                eventTextLike.setText(String.valueOf(number + 1));
+            }
+        });
+
     }
-
-
-
 
 
 }

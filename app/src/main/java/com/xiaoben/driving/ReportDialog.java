@@ -31,14 +31,23 @@ public class ReportDialog extends Dialog {
     private ReportRecyclerViewAdapter recyclerViewAdapter;
     private ViewSwitcher viewSwitcher;
     private String eventType;
-    //event specs
-    private ImageView imageCamera;
+
     private Button backButton;
     private Button sendButton;
     private EditText commentEditText;
     private ImageView eventTypeImg;
     private TextView typeTextView;
     private DialogCallBack dialogCallBack;
+    private String prefillText;
+
+    //event specs
+    private ImageView imageCamera;
+
+    public void setVocieInfor(String event_type, String prefill_text) {
+        eventType = event_type;
+        prefillText = prefill_text;
+
+    }
 
     interface DialogCallBack{
         void onSubmit(String editString, String event_type);
@@ -164,6 +173,16 @@ public class ReportDialog extends Dialog {
 
     }
 
+    @Override
+    public void onStart() {
+        super.onStart();
+        if (eventType != null) {
+            showNextViewSwitcher(eventType);
+        }
+        if (prefillText != null) {
+            commentEditText.setText(prefillText);
+        }
+    }
 
 
 }
